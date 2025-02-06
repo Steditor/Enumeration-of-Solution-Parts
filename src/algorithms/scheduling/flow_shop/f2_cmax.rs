@@ -23,55 +23,53 @@ pub type AlgorithmType =
 
 /// Enumeration algorithm for F2||C_max with IQS for incremental sorting
 pub const ENUMERATE_WITH_IQS: AlgorithmType =
-    ExperimentAlgorithm::EnumerationAlgorithm("enum-iqs", EnumerateWithIQS::algorithm);
+    ExperimentAlgorithm::EnumerationAlgorithm("enum-iqs", prepare_enumeration_algorithm);
 
-struct EnumerateWithIQS<'a> {
-    iqs: std::iter::Chain<IQS<&'a Job<i32>>, IQS<&'a Job<i32>>>,
+struct EnumerateWithIQS<'a, I: Iterator<Item = &'a Job<i32>>> {
+    iqs: I,
     time_machine_1: i64,
     next_machine_1: Option<SchedulePartial>,
     time_machine_2: i64,
     queue_machine_2: VecDeque<SchedulePartial>,
 }
 
-impl<'a> EnumerateWithIQS<'a> {
-    pub fn new(input: &'a SchedulingInstance<FlowShop, i32>) -> Self {
-        assert_eq!(
-            input.environment.machines, 2,
-            "Johnson's algorithm only works for exactly 2 machines."
-        );
-        let jobs_faster_or_equal_on_machine_1: Vec<&Job<i32>> = input
-            .jobs
-            .iter()
-            .filter(|j| j.operations[0] <= j.operations[1])
-            .collect();
-        let jobs_faster_on_machine_2: Vec<&Job<i32>> = input
-            .jobs
-            .iter()
-            .filter(|j| j.operations[0] > j.operations[1])
-            .collect();
-        let iqs = IQS::with_comparator(&jobs_faster_or_equal_on_machine_1, |j1, j2| {
-            j1.operations[0].cmp(&j2.operations[0])
-        })
-        .chain(IQS::with_comparator(&jobs_faster_on_machine_2, |j1, j2| {
-            j1.operations[0].cmp(&j2.operations[0]).reverse()
-        }));
-        Self {
-            iqs,
-            time_machine_1: 0,
-            next_machine_1: None,
-            time_machine_2: 0,
-            queue_machine_2: VecDeque::new(),
-        }
-    }
-
-    fn algorithm(
-        input: &SchedulingInstance<FlowShop, i32>,
-    ) -> PreparedEnumerationAlgorithm<SchedulePartial> {
-        Box::new(EnumerateWithIQS::new(input))
-    }
+fn prepare_enumeration_algorithm(
+    input: &SchedulingInstance<FlowShop, i32>,
+) -> PreparedEnumerationAlgorithm<SchedulePartial> {
+    assert_eq!(
+        input.environment.machines, 2,
+        "Johnson's algorithm only works for exactly 2 machines."
+    );
+    let jobs_faster_or_equal_on_machine_1: Vec<&Job<i32>> = input
+        .jobs
+        .iter()
+        .filter(|j| j.operations[0] <= j.operations[1])
+        .collect();
+    let jobs_faster_on_machine_2: Vec<&Job<i32>> = input
+        .jobs
+        .iter()
+        .filter(|j| j.operations[0] > j.operations[1])
+        .collect();
+    let iqs = Box::new(
+        IQS::with_comparator(
+            &jobs_faster_or_equal_on_machine_1,
+            |j1: &&Job<i32>, j2: &&Job<i32>| j1.operations[0].cmp(&j2.operations[0]),
+        )
+        .chain(IQS::with_comparator(
+            &jobs_faster_on_machine_2,
+            |j1: &&Job<i32>, j2: &&Job<i32>| j1.operations[0].cmp(&j2.operations[0]).reverse(),
+        )),
+    );
+    Box::new(EnumerateWithIQS {
+        iqs,
+        time_machine_1: 0,
+        next_machine_1: None,
+        time_machine_2: 0,
+        queue_machine_2: VecDeque::new(),
+    })
 }
 
-impl Iterator for EnumerateWithIQS<'_> {
+impl<'a, I: Iterator<Item = &'a Job<i32>>> Iterator for EnumerateWithIQS<'a, I> {
     type Item = SchedulePartial;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -117,7 +115,9 @@ fn min_time(sp1: Option<SchedulePartial>, sp2: Option<SchedulePartial>) -> Optio
 
 /// Total time algorithm for F2||C_max with rust's sort_unstable_by_key
 pub const SOLVE_WITH_UNSTABLE_SORT: AlgorithmType =
-    ExperimentAlgorithm::TotalTimeAlgorithm("total-unstable-sort", rust_unstable_sort);
+    ExperimentAlgorithm::TotalTimeAlgorithm("total-unstable-sort", |input| {
+        Ok(rust_unstable_sort(input))
+    });
 
 fn rust_unstable_sort(input: &SchedulingInstance<FlowShop, i32>) -> Vec<SchedulePartial> {
     assert_eq!(
@@ -204,7 +204,7 @@ mod test {
                 .collect(),
             precedences: (),
         };
-        let mut schedule: Vec<_> = EnumerateWithIQS::new(&instance).collect();
+        let mut schedule: Vec<_> = prepare_enumeration_algorithm(&instance).collect();
 
         assert!(
             schedule

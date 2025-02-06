@@ -1,21 +1,35 @@
 use core::fmt;
-use std::ops::ControlFlow;
+use std::{marker::PhantomData, ops::ControlFlow};
 
-use crate::data_structures::graphs::{DirectedGraph, Direction, Index};
+use crate::data_structures::{
+    graphs::{DirectedGraph, Direction, EdgeData},
+    Index,
+};
 
-use super::search::{dfs, DfsEvent, IDFS};
+use super::search::dfs::{dfs, DfsEvent, IDFS};
 
-pub struct IterativeSourceRemoval<'a, I: Index, DAG: DirectedGraph<I>> {
+pub struct IterativeSourceRemoval<'a, DAG, I, ED>
+where
+    DAG: DirectedGraph<I, ED>,
+    I: Index,
+    ED: EdgeData,
+{
     graph: &'a DAG,
     in_degrees: Vec<I>,
     sources: Vec<I>,
     num_ordered: I,
+    _phantom: PhantomData<ED>,
 }
 
-impl<'a, I: Index, DAG: DirectedGraph<I>> IterativeSourceRemoval<'a, I, DAG> {
+impl<'a, DAG, I, ED> IterativeSourceRemoval<'a, DAG, I, ED>
+where
+    DAG: DirectedGraph<I, ED>,
+    I: Index,
+    ED: EdgeData,
+{
     pub fn new(graph: &'a DAG) -> Self {
-        let in_degrees: Vec<I> = I::new(0)
-            .range(graph.num_vertices())
+        let in_degrees: Vec<I> = graph
+            .vertices()
             .map(|v| graph.degree(v, Direction::IN))
             .collect();
 
@@ -23,7 +37,7 @@ impl<'a, I: Index, DAG: DirectedGraph<I>> IterativeSourceRemoval<'a, I, DAG> {
             .iter()
             .enumerate()
             .filter_map(|(v, deg)| {
-                if *deg == I::new(0) {
+                if *deg == I::zero() {
                     Some(I::new(v))
                 } else {
                     None
@@ -35,23 +49,29 @@ impl<'a, I: Index, DAG: DirectedGraph<I>> IterativeSourceRemoval<'a, I, DAG> {
             graph,
             in_degrees,
             sources,
-            num_ordered: I::new(0),
+            num_ordered: I::zero(),
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<I: Index, DAG: DirectedGraph<I>> Iterator for IterativeSourceRemoval<'_, I, DAG> {
+impl<DAG, I, ED> Iterator for IterativeSourceRemoval<'_, DAG, I, ED>
+where
+    DAG: DirectedGraph<I, ED>,
+    I: Index,
+    ED: EdgeData,
+{
     type Item = Result<I, HasCycles>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(source) = self.sources.pop() {
             for n in self.graph.neighbors(source, Direction::OUT) {
-                self.in_degrees[n.index()] -= I::new(1);
-                if self.in_degrees[n.index()] == I::new(0) {
+                self.in_degrees[n.index()] -= I::one();
+                if self.in_degrees[n.index()] == I::zero() {
                     self.sources.push(n);
                 }
             }
-            self.num_ordered += I::new(1);
+            self.num_ordered += I::one();
             Some(Ok(source))
         } else if self.num_ordered == self.graph.num_vertices() {
             None
@@ -62,8 +82,10 @@ impl<I: Index, DAG: DirectedGraph<I>> Iterator for IterativeSourceRemoval<'_, I,
 }
 
 /// Compute a topological ordering with an incremental algorithm for DFS finishing times
-pub fn idfs_finish_time<I: Index, DAG: DirectedGraph<I>>(graph: &DAG) -> Result<Vec<I>, HasCycles> {
-    let mut order = vec![I::new(0); graph.num_vertices().index()];
+pub fn idfs_finish_time<I: Index, ED: EdgeData>(
+    graph: &impl DirectedGraph<I, ED>,
+) -> Result<Vec<I>, HasCycles> {
+    let mut order = vec![I::zero(); graph.num_vertices().index()];
     let mut index = order.len();
 
     let mut dfs = IDFS::new(graph.num_vertices());
@@ -75,7 +97,7 @@ pub fn idfs_finish_time<I: Index, DAG: DirectedGraph<I>>(graph: &DAG) -> Result<
                 index -= 1;
                 order[index] = v;
             }
-            DfsEvent::BackEdge(_, _) => {
+            DfsEvent::BackEdge(_, _, _) => {
                 // DAGs have no back edges.
                 return Err(HasCycles);
             }
@@ -87,11 +109,13 @@ pub fn idfs_finish_time<I: Index, DAG: DirectedGraph<I>>(graph: &DAG) -> Result<
 }
 
 /// Compute a topological ordering with a recursive algorithm for DFS finishing times
-pub fn dfs_finish_time<I: Index, DAG: DirectedGraph<I>>(graph: &DAG) -> Result<Vec<I>, HasCycles> {
-    let mut order = vec![I::new(0); graph.num_vertices().index()];
+pub fn dfs_finish_time<I: Index, ED: EdgeData>(
+    graph: &impl DirectedGraph<I, ED>,
+) -> Result<Vec<I>, HasCycles> {
+    let mut order = vec![I::zero(); graph.num_vertices().index()];
     let mut index = order.len();
 
-    match dfs(graph, &mut |e: DfsEvent<I>| {
+    match dfs(graph, &mut |e: DfsEvent<I, ED>| {
         match e {
             DfsEvent::Finished(v) => {
                 // topological ordering = vertices sorted by decreasing finish time
@@ -99,7 +123,7 @@ pub fn dfs_finish_time<I: Index, DAG: DirectedGraph<I>>(graph: &DAG) -> Result<V
                 order[index] = v;
                 ControlFlow::Continue(())
             }
-            DfsEvent::BackEdge(_, _) => {
+            DfsEvent::BackEdge(_, _, _) => {
                 // DAGs have no back edges.
                 ControlFlow::Break(HasCycles)
             }
@@ -126,7 +150,7 @@ impl std::error::Error for HasCycles {}
 
 #[cfg(test)]
 mod test {
-    use crate::data_structures::graphs::{DirectedAdjacencyArraysGraph, DirectedEdgeListGraph};
+    use crate::data_structures::graphs::{DirectedAdjacencyArrayGraph, Graph};
 
     use super::*;
 
@@ -139,48 +163,42 @@ mod test {
 
     #[test]
     fn test_iterative_source_removal() {
-        let graph = DirectedEdgeListGraph::new(5, EDGES.into());
-        let graph = DirectedAdjacencyArraysGraph::from(&graph);
+        let graph = DirectedAdjacencyArrayGraph::<u32>::new(5, &EDGES);
         let order: Result<Vec<u32>, HasCycles> = IterativeSourceRemoval::new(&graph).collect();
         assert_eq!(order.unwrap(), TOPO_ORDER);
     }
 
     #[test]
     fn test_idfs_finish_time() {
-        let graph = DirectedEdgeListGraph::new(5, EDGES.into());
-        let graph = DirectedAdjacencyArraysGraph::from(&graph);
+        let graph = DirectedAdjacencyArrayGraph::<u32>::new(5, &EDGES);
         let order: Result<Vec<u32>, HasCycles> = idfs_finish_time(&graph);
         assert_eq!(order.unwrap(), TOPO_ORDER);
     }
 
     #[test]
     fn test_dfs_finish_time() {
-        let graph = DirectedEdgeListGraph::new(5, EDGES.into());
-        let graph = DirectedAdjacencyArraysGraph::from(&graph);
+        let graph = DirectedAdjacencyArrayGraph::<u32>::new(5, &EDGES);
         let order: Result<Vec<u32>, HasCycles> = dfs_finish_time(&graph);
         assert_eq!(order.unwrap(), TOPO_ORDER);
     }
 
     #[test]
     fn test_iterative_source_removal_with_cycle() {
-        let graph = DirectedEdgeListGraph::new(5, EDGES_WITH_CYCLE.into());
-        let graph = DirectedAdjacencyArraysGraph::from(&graph);
+        let graph = DirectedAdjacencyArrayGraph::<u32>::new(5, &EDGES_WITH_CYCLE);
         let order: Result<Vec<u32>, HasCycles> = IterativeSourceRemoval::new(&graph).collect();
         assert!(order.is_err_and(|e| e == HasCycles));
     }
 
     #[test]
     fn test_idfs_finish_time_with_cycle() {
-        let graph = DirectedEdgeListGraph::new(5, EDGES_WITH_CYCLE.into());
-        let graph = DirectedAdjacencyArraysGraph::from(&graph);
+        let graph = DirectedAdjacencyArrayGraph::<u32>::new(5, &EDGES_WITH_CYCLE);
         let order: Result<Vec<u32>, HasCycles> = idfs_finish_time(&graph);
         assert!(order.is_err_and(|e| e == HasCycles));
     }
 
     #[test]
     fn test_dfs_finish_time_with_cycle() {
-        let graph = DirectedEdgeListGraph::new(5, EDGES_WITH_CYCLE.into());
-        let graph = DirectedAdjacencyArraysGraph::from(&graph);
+        let graph = DirectedAdjacencyArrayGraph::<u32>::new(5, &EDGES_WITH_CYCLE);
         let order: Result<Vec<u32>, HasCycles> = dfs_finish_time(&graph);
         assert!(order.is_err_and(|e| e == HasCycles));
     }

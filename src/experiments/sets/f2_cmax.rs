@@ -1,13 +1,10 @@
 use crate::{
     algorithms::scheduling::flow_shop::f2_cmax,
-    experiments::runner,
-    random_generators::{
-        numbers::{Rng, TaillardLCG},
-        scheduling::flow_shop,
-    },
+    data_generators::scheduling::flow_shop,
+    experiments::{runner, InstanceGenerator},
 };
 
-use super::{ExperimentOptions, ExperimentSet};
+use super::{AggregationOptions, ExperimentOptions, ExperimentSet};
 
 pub fn experiment_set() -> ExperimentSet {
     ExperimentSet { run, aggregate }
@@ -18,7 +15,7 @@ const ALGORITHMS: [f2_cmax::AlgorithmType; 2] = [
     f2_cmax::SOLVE_WITH_UNSTABLE_SORT,
 ];
 
-fn run(options: ExperimentOptions) {
+fn run(options: &mut ExperimentOptions) {
     let job_numbers = [
         10_000,
         20_000,
@@ -71,12 +68,11 @@ fn run(options: ExperimentOptions) {
     ];
     let instances_per_size = 10;
     let runs_per_instance = 5;
-
-    let mut seed_rng = TaillardLCG::from_seed(42);
+    let max_size = options.max_size;
 
     for jobs in job_numbers
         .into_iter()
-        .filter(|&size| !options.max_size.is_some_and(|max| size > max))
+        .filter(|&size| max_size.is_none_or(|max| size <= max))
     {
         log::info!("Run F2||C_max solver for {} jobs.", jobs);
         for i in 1..=instances_per_size {
@@ -86,19 +82,24 @@ fn run(options: ExperimentOptions) {
                 instances_per_size,
                 jobs
             );
-            let mut instance_rng = TaillardLCG::from_seed(seed_rng.next_seed());
-            let mut generator = flow_shop::Taillard {
-                rng: &mut instance_rng,
-                jobs,
-                machines: 2,
-            };
+            let mut generator = flow_shop::Taillard { jobs, machines: 2 };
 
-            runner::run_experiment(&mut generator, options, runs_per_instance, &ALGORITHMS)
-                .unwrap();
+            runner::run_cachable_experiment::<_, _, _, _, (), _, (), _>(
+                &mut generator,
+                options,
+                runs_per_instance,
+                &ALGORITHMS,
+            )
+            .unwrap();
         }
     }
 }
 
-fn aggregate() {
-    super::aggregate::<flow_shop::Taillard, _, _, _>(&ALGORITHMS)
+fn aggregate(options: &AggregationOptions) {
+    let reference_algorithm = options
+        .reference
+        .as_ref()
+        .and_then(|algo_name| ALGORITHMS.iter().find(|algo| algo.name() == algo_name));
+    let folder = flow_shop::Taillard::path();
+    super::aggregate::<_, _, _, ()>(&folder, &ALGORITHMS, options, reference_algorithm)
 }
