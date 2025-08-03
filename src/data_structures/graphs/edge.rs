@@ -11,7 +11,7 @@ macro_rules! auto_impl {
 }
 
 pub trait EdgeData: Copy + Clone + Default + Debug + 'static {}
-auto_impl!(EdgeData, () u8 i8 u16 i16 u32 i32 u64 i64 u128 i128 f32 f64);
+auto_impl!(EdgeData, () u8 i8 u16 i16 u32 i32 u64 i64 u128 i128 f32 f64 usize);
 
 pub trait EdgeWeight: EdgeData + Ord + Add<Self> + Zero {}
 auto_impl!(EdgeWeight, u8 i8 u16 i16 u32 i32 u64 i64 u128 i128);

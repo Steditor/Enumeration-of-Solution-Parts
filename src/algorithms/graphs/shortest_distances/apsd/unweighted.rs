@@ -111,7 +111,7 @@ where
     ED: EdgeData,
 {
     ExperimentAlgorithm::TotalTimeAlgorithm("apsd-bfs-visit", |graph| {
-        apsd_bfs_visitor(graph, &mut |_| ControlFlow::<()>::Continue(()));
+        let _ = apsd_bfs_visitor(graph, &mut |_| ControlFlow::<()>::Continue(()));
         // Return a dummy Matrix.
         Ok(Matrix::new_square(0))
     })

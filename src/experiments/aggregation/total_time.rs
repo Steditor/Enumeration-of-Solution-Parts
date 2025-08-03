@@ -62,7 +62,7 @@ impl<A: Aggregation> TotalTimeAggregation<A> {
 
 pub fn aggregate<A: Aggregation, Q: Quality + DeserializeOwned>(
     files: &[MeasurementFilePath],
-    folder: &Path,
+    folder: impl AsRef<Path>,
     algorithm_name: &str,
 ) -> Result<(), IOError> {
     let mut aggregations_by_size: HashMap<u32, TotalTimeAggregation<A>> = HashMap::new();
@@ -95,7 +95,7 @@ pub fn aggregate<A: Aggregation, Q: Quality + DeserializeOwned>(
         .iter_mut()
         .for_each(|(_, a)| a.aggregate());
 
-    let mut path = PathBuf::from(folder);
+    let mut path = PathBuf::from(folder.as_ref());
     path.push(format!(
         "aggregated_{}.{}.csv",
         files[0].parameters, algorithm_name

@@ -57,19 +57,11 @@ fn run(options: &mut ExperimentOptions) {
             }
 
             log::info!(
-                "Run 1|prec|C_max solver for {} jobs and parameter {} (edge probability {}).",
-                jobs,
-                parameter_label,
-                edge_probability,
+                "Run 1|prec|C_max solver for {jobs} jobs and parameter {parameter_label} (edge probability {edge_probability})."
             );
             for i in 1..=instances_per_size {
                 log::info!(
-                    "Solve instance {:2}/{:2} with {} jobs and parameter {} (edge probability {}).",
-                    i,
-                    instances_per_size,
-                    jobs,
-                    parameter_label,
-                    edge_probability,
+                    "Solve instance {i:2}/{instances_per_size:2} with {jobs} jobs and parameter {parameter_label} (edge probability {edge_probability})."
                 );
                 let mut generator = single_machine::WithPrecedences {
                     jobs,

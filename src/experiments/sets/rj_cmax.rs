@@ -74,14 +74,9 @@ fn run(options: &mut ExperimentOptions) {
         .into_iter()
         .filter(|&size| max_size.is_none_or(|max| size <= max))
     {
-        log::info!("Run 1|r_j|C_max solver for {} jobs.", jobs);
+        log::info!("Run 1|r_j|C_max solver for {jobs} jobs.");
         for i in 1..=instances_per_size {
-            log::info!(
-                "Solve instance {:2}/{:2} with {} jobs.",
-                i,
-                instances_per_size,
-                jobs
-            );
+            log::info!("Solve instance {i:2}/{instances_per_size:2} with {jobs} jobs.");
             let mut generator = single_machine::WithReleaseTimes {
                 jobs,
                 release_spread: 0.5,

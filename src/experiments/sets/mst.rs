@@ -12,15 +12,17 @@ pub fn experiment_set() -> ExperimentSet {
     ExperimentSet { run, aggregate }
 }
 
-const ALGORITHMS: [undirected_weighted::AlgorithmType; 8] = [
+const ALGORITHMS: [undirected_weighted::AlgorithmType; 10] = [
     undirected_weighted::ENUMERATE_WITH_BORUVKA,
     undirected_weighted::ENUMERATE_WITH_KRUSKAL,
     undirected_weighted::ENUMERATE_WITH_PRIM,
     undirected_weighted::BORUVKA,
     undirected_weighted::KRUSKAL_IQS,
-    undirected_weighted::KRUSKAL_PDQ,
+    undirected_weighted::KRUSKAL_RUSTSORT,
     undirected_weighted::PRIM,
     undirected_weighted::INCREMENTAL_PRIM,
+    undirected_weighted::INCREMENTAL_KRUSKAL,
+    undirected_weighted::INCREMENTAL_BORUVKA,
 ];
 
 fn run(options: &mut ExperimentOptions) {
@@ -65,19 +67,11 @@ fn run(options: &mut ExperimentOptions) {
             let edge_data_generator = Uniform::new(0, expected_edges.floor() as u32 / 4);
 
             log::info!(
-                "Run MST algorithm for {} jobs and parameter {} (edge probability {}).",
-                num_vertices,
-                parameter_label,
-                edge_probability,
+                "Run MST algorithm for {num_vertices} jobs and parameter {parameter_label} (edge probability {edge_probability})."
             );
             for i in 1..=instances_per_size {
                 log::info!(
-                    "Solve instance {:2}/{:2} with {} vertices and parameter {} (edge probability {}).",
-                    i,
-                    instances_per_size,
-                    num_vertices,
-                    parameter_label,
-                    edge_probability,
+                    "Solve instance {i:2}/{instances_per_size:2} with {num_vertices} vertices and parameter {parameter_label} (edge probability {edge_probability})."
                 );
                 let mut generator = UndirectedConnected::new(
                     num_vertices,

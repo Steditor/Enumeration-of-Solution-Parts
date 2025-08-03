@@ -17,6 +17,7 @@ pub struct DataSet {
     pub download: fn() -> Pin<Box<dyn Future<Output = ()>>>,
 }
 
+#[derive(Debug)]
 pub enum DataSetReaderError {
     TooLarge(u32, u32),
     InputError(String),
@@ -46,7 +47,7 @@ where
     I: Index,
     ED: EdgeData,
 {
-    fn read_from(path: &Path, options: &O) -> Result<G, DataSetReaderError>;
+    fn read_from(path: impl AsRef<Path>, options: &O) -> Result<G, DataSetReaderError>;
 }
 
 pub struct GraphSetIterator<R, G, I, ED, O>
@@ -99,11 +100,11 @@ where
                 Ok(g) => g,
                 Err(why) => match why {
                     DataSetReaderError::TooLarge(..) => {
-                        log::info!("{}", why.to_string(),);
+                        log::info!("{why}");
                         continue;
                     }
                     _ => {
-                        log::error!("{}", why.to_string());
+                        log::error!("{why}");
                         continue;
                     }
                 },

@@ -15,11 +15,12 @@ pub enum HeaderMode {
 }
 
 pub fn write_to_file<T: Serialize>(
-    file_path: &Path,
+    file_path: impl AsRef<Path>,
     objects: &[T],
     mode: WriteMode,
     headers: HeaderMode,
 ) -> Result<(), IOError> {
+    let file_path = file_path.as_ref();
     ensure_parent_folder_exists(file_path)?;
 
     let display: String = file_path.display().to_string();
@@ -70,11 +71,15 @@ pub fn write_to_file<T: Serialize>(
     Ok(())
 }
 
-pub fn append_to_file<T: Serialize>(file_path: &Path, objects: &[T]) -> Result<(), IOError> {
+pub fn append_to_file<T: Serialize>(
+    file_path: impl AsRef<Path>,
+    objects: &[T],
+) -> Result<(), IOError> {
     write_to_file(file_path, objects, WriteMode::Append, HeaderMode::Auto)
 }
 
-pub fn read_from_file<T: DeserializeOwned>(file_path: &Path) -> Result<Vec<T>, IOError> {
+pub fn read_from_file<T: DeserializeOwned>(file_path: impl AsRef<Path>) -> Result<Vec<T>, IOError> {
+    let file_path = file_path.as_ref();
     let display: String = file_path.display().to_string();
 
     // open file for reading

@@ -12,9 +12,10 @@ use super::ensure_parent_folder_exists;
 
 pub async fn download_file(
     source_url: &str,
-    destination_path: &Path,
+    destination_path: impl AsRef<Path>,
     client: Option<Client>,
 ) -> Result<String, String> {
+    let destination_path = destination_path.as_ref();
     ensure_parent_folder_exists(destination_path).map_err(|why| {
         format!(
             "Failed to create parent folder for {}: {}",
@@ -45,7 +46,7 @@ pub async fn download_file(
         .get(source_url)
         .send()
         .await
-        .map_err(|why| format!("Failed to download from {}: {}", source_url, why))?;
+        .map_err(|why| format!("Failed to download from {source_url}: {why}"))?;
 
     let size = response.content_length();
 
@@ -64,8 +65,7 @@ pub async fn download_file(
 
     let mut bytes_stream = response.bytes_stream();
     while let Some(stream_part) = bytes_stream.next().await {
-        let chunk =
-            stream_part.map_err(|why| format!("Error downloading {}: {}", source_url, why))?;
+        let chunk = stream_part.map_err(|why| format!("Error downloading {source_url}: {why}"))?;
         file.write_all(&chunk)
             .map_err(|why| format!("Error writing to {}: {}", destination_path.display(), why))?;
         done += chunk.len() as u64;

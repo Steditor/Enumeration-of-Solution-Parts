@@ -58,7 +58,7 @@ Options:
           Print help
 ```
 
-## Download Datasets
+## Downloading Datasets
 
 ```txt
 Download datasets.
@@ -71,6 +71,22 @@ Arguments:
 
           Possible values:
           - OpenStreetMap: OpenStreetMap data, downloaded from the links provided in /data/datasets/osm/download-links.csv
+
+Options:
+  -h, --help
+          Print help
+```
+
+## Visualizing Algorithms
+
+```txt
+Visualize enumeration algorithms.
+
+Usage: cargo run --release --bin visualize -- <VISUALIZATION>
+
+Arguments:
+  <VISUALIZATION>
+          The algorithm to visualize [possible values: MST]
 
 Options:
   -h, --help

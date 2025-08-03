@@ -19,13 +19,13 @@ impl fmt::Display for IOError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let err = match self {
             IOError::Unknown => String::from("Unknown error"),
-            IOError::CannotWrite(what, why) => format!("Couldn't write to {}: {}", what, why),
+            IOError::CannotWrite(what, why) => format!("Couldn't write to {what}: {why}"),
             IOError::CannotSerialize(what, why) => {
-                format!("Couldn't serialize to {}: {}", what, why)
+                format!("Couldn't serialize to {what}: {why}")
             }
-            IOError::CannotRead(what, why) => format!("Couldn't read from {}: {}", what, why),
+            IOError::CannotRead(what, why) => format!("Couldn't read from {what}: {why}"),
             IOError::CannotDeserialize(what, why) => {
-                format!("Couldn't deserialize from {}: {}", what, why)
+                format!("Couldn't deserialize from {what}: {why}")
             }
         };
 
@@ -34,7 +34,8 @@ impl fmt::Display for IOError {
 }
 impl std::error::Error for IOError {}
 
-fn ensure_parent_folder_exists(file_path: &Path) -> Result<(), IOError> {
+fn ensure_parent_folder_exists(file_path: impl AsRef<Path>) -> Result<(), IOError> {
+    let file_path = file_path.as_ref();
     let display: String = file_path.display().to_string();
 
     let parent = match file_path.parent() {

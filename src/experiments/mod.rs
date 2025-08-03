@@ -92,12 +92,12 @@ pub trait CachableInstanceGenerator<T: DeserializeOwned + Serialize>: InstanceGe
     fn generate_with_cache(&self, seed: u64) -> Result<T, io::IOError> {
         let mut experiment_path = Self::path();
         experiment_path.push_str(&self.file_name());
-        experiment_path.push_str(&format!("_{}", seed));
+        experiment_path.push_str(&format!("_{seed}"));
         experiment_path.push_str(".json");
         let file_path = Path::new(&experiment_path);
 
         match io::json::read_json_from_file(file_path) {
-            Err(why) => log::info!("Reading the instance from a file failed: {}", why),
+            Err(why) => log::info!("Reading the instance from a file failed: {why}"),
             Ok(instance) => {
                 log::info!("Successfully read instance from {}.", file_path.display());
                 return Ok(instance);

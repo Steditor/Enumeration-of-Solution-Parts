@@ -117,7 +117,7 @@ where
             graph.num_vertices()
         );
 
-        let instance_path = format!("{}_0", instance_prefix);
+        let instance_path = format!("{instance_prefix}_0");
         log::info!(
             "Solve instance with {} vertices and {} edges from osm file {}.",
             graph.num_vertices(),

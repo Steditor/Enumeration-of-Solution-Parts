@@ -132,7 +132,7 @@ where
         if options.run_algorithms {
             for i in 1..=instances_per_graph {
                 let seed = options.seed_generator.next_u64();
-                let instance_path = format!("{}_{}", instance_prefix, seed);
+                let instance_path = format!("{instance_prefix}_{seed}");
                 log::info!(
                     "Solve instance {:2}/{:2} with {} vertices and {} edges from osm file {}.",
                     i,

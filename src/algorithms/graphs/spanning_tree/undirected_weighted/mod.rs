@@ -1,14 +1,14 @@
 mod boruvka;
-mod incremental;
+mod enumeration;
 mod kruskal;
 mod prim;
 
-pub use boruvka::{Boruvka, BORUVKA};
-pub use incremental::{
-    Incremental, ENUMERATE_WITH_BORUVKA, ENUMERATE_WITH_KRUSKAL, ENUMERATE_WITH_PRIM,
+pub use boruvka::{IncrementalBoruvka, Boruvka, INCREMENTAL_BORUVKA, BORUVKA};
+pub use enumeration::{
+    EnumMST, ENUMERATE_WITH_BORUVKA, ENUMERATE_WITH_KRUSKAL, ENUMERATE_WITH_PRIM,
 };
-pub use kruskal::{Kruskal, KRUSKAL_IQS, KRUSKAL_PDQ};
-pub use prim::{Prim, INCREMENTAL_PRIM, PRIM};
+pub use kruskal::{IncrementalKruskal, Kruskal, INCREMENTAL_KRUSKAL, KRUSKAL_IQS, KRUSKAL_RUSTSORT};
+pub use prim::{IncrementalPrim, Prim, INCREMENTAL_PRIM, PRIM};
 
 use compare::Compare;
 

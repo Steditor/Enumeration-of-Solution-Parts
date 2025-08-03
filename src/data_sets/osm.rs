@@ -4,6 +4,7 @@ use std::{
 };
 
 use num::cast::AsPrimitive;
+use osm4routing::{Edge, Node};
 use serde::Deserialize;
 use walkdir::WalkDir;
 
@@ -74,7 +75,7 @@ impl OsmReader {
     }
 
     pub fn read_from_file(
-        path: &Path,
+        path: impl AsRef<Path>,
         options: &OsmReaderOptions,
     ) -> Result<(Vec<osm4routing::Node>, Vec<osm4routing::Edge>), DataSetReaderError> {
         let mut reader = osm4routing::Reader::new();
@@ -86,20 +87,13 @@ impl OsmReader {
         if options.merge_ways {
             reader = reader.merge_ways();
         }
-        reader.read(path).map_err(|why| {
+        let (osm_nodes, osm_edges) = reader.read(&path).map_err(|why| {
             DataSetReaderError::InputError(format!(
                 "Could not read osm data from {}: {}",
-                path.display(),
+                path.as_ref().display(),
                 why
             ))
-        })
-    }
-
-    fn prepare_import(
-        path: &Path,
-        options: &OsmReaderOptions,
-    ) -> Result<(HashMap<i64, u32>, Vec<osm4routing::Edge>), DataSetReaderError> {
-        let (osm_nodes, osm_edges) = Self::read_from_file(path, options)?;
+        })?;
 
         assert!(osm_nodes.len() < u32::MAX as usize);
         let num_vertices = osm_nodes.len() as u32;
@@ -110,12 +104,15 @@ impl OsmReader {
             ));
         }
 
+        Ok((osm_nodes, osm_edges))
+    }
+
+    pub fn build_node_translation(osm_nodes: &[Node]) -> HashMap<i64, u32> {
         let mut node_translation = HashMap::with_capacity(osm_nodes.len());
         for (index, node) in osm_nodes.iter().enumerate() {
             node_translation.insert(node.id.0, index as u32);
         }
-
-        Ok((node_translation, osm_edges))
+        node_translation
     }
 
     fn get_edge_endpoints(
@@ -138,40 +135,32 @@ impl OsmReader {
                 )))?;
         Ok((*u, *v))
     }
-}
 
-impl GraphReader<UndirectedAdjacencyArrayGraph<u32, ()>, u32, (), OsmReaderOptions> for OsmReader {
-    fn read_from(
-        path: &Path,
-        options: &OsmReaderOptions,
+    pub fn to_unweighted_undirected(
+        (osm_nodes, osm_edges): &(Vec<Node>, Vec<Edge>),
     ) -> Result<UndirectedAdjacencyArrayGraph<u32, ()>, DataSetReaderError> {
-        let (node_translation, osm_edges) = Self::prepare_import(path, options)?;
+        let node_translation = OsmReader::build_node_translation(osm_nodes);
         let num_vertices = node_translation.len() as u32;
 
         let mut unique_edges = HashSet::with_capacity(osm_edges.len());
         for edge in osm_edges {
-            let (u, v) = Self::get_edge_endpoints(&edge, &node_translation)?;
+            let (u, v) = OsmReader::get_edge_endpoints(edge, &node_translation)?;
             unique_edges.insert((u.min(v), u.max(v)));
         }
 
         let edges: Vec<_> = unique_edges.drain().collect();
         Ok(UndirectedAdjacencyArrayGraph::new(num_vertices, &edges))
     }
-}
 
-impl GraphReader<UndirectedAdjacencyArrayGraph<u32, u32>, u32, u32, OsmReaderOptions>
-    for OsmReader
-{
-    fn read_from(
-        path: &Path,
-        options: &OsmReaderOptions,
+    pub fn to_weighted_undirected(
+        (osm_nodes, osm_edges): &(Vec<Node>, Vec<Edge>),
     ) -> Result<UndirectedAdjacencyArrayGraph<u32, u32>, DataSetReaderError> {
-        let (node_translation, osm_edges) = Self::prepare_import(path, options)?;
+        let node_translation = OsmReader::build_node_translation(osm_nodes);
         let num_vertices = node_translation.len() as u32;
 
         let mut unique_edges = HashSet::with_capacity(osm_edges.len());
         for edge in osm_edges {
-            let (u, v) = Self::get_edge_endpoints(&edge, &node_translation)?;
+            let (u, v) = Self::get_edge_endpoints(edge, &node_translation)?;
             // we cast edge length in meters from f64 to u32, which should be enough precision for our applications
             unique_edges.insert((u.min(v), u.max(v), edge.length().as_()));
         }
@@ -181,6 +170,26 @@ impl GraphReader<UndirectedAdjacencyArrayGraph<u32, u32>, u32, u32, OsmReaderOpt
             num_vertices,
             &edges,
         ))
+    }
+}
+
+impl GraphReader<UndirectedAdjacencyArrayGraph<u32, ()>, u32, (), OsmReaderOptions> for OsmReader {
+    fn read_from(
+        path: impl AsRef<Path>,
+        options: &OsmReaderOptions,
+    ) -> Result<UndirectedAdjacencyArrayGraph<u32, ()>, DataSetReaderError> {
+        Self::to_unweighted_undirected(&Self::read_from_file(path, options)?)
+    }
+}
+
+impl GraphReader<UndirectedAdjacencyArrayGraph<u32, u32>, u32, u32, OsmReaderOptions>
+    for OsmReader
+{
+    fn read_from(
+        path: impl AsRef<Path>,
+        options: &OsmReaderOptions,
+    ) -> Result<UndirectedAdjacencyArrayGraph<u32, u32>, DataSetReaderError> {
+        Self::to_weighted_undirected(&Self::read_from_file(path, options)?)
     }
 }
 

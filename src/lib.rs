@@ -9,3 +9,4 @@ pub mod data_structures;
 pub mod experiments;
 pub mod helpers;
 pub mod io;
+pub mod visualization;

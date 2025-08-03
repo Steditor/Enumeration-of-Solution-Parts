@@ -9,9 +9,13 @@ use serde::{de::DeserializeOwned, Serialize};
 use super::{ensure_parent_folder_exists, IOError};
 
 /// Serialize the given object to a json string an write that to the given file.
-pub fn write_json_to_file<T: Serialize>(file_path: &Path, object: T) -> Result<(), IOError> {
-    ensure_parent_folder_exists(file_path)?;
+pub fn write_json_to_file<T: Serialize>(
+    file_path: impl AsRef<Path>,
+    object: T,
+) -> Result<(), IOError> {
+    ensure_parent_folder_exists(&file_path)?;
 
+    let file_path = file_path.as_ref();
     let display: String = file_path.display().to_string();
 
     // open file for writing
@@ -32,7 +36,8 @@ pub fn write_json_to_file<T: Serialize>(file_path: &Path, object: T) -> Result<(
     }
 }
 
-pub fn read_json_from_file<T: DeserializeOwned>(file_path: &Path) -> Result<T, IOError> {
+pub fn read_json_from_file<T: DeserializeOwned>(file_path: impl AsRef<Path>) -> Result<T, IOError> {
+    let file_path = file_path.as_ref();
     let display: String = file_path.display().to_string();
 
     // open file for reading

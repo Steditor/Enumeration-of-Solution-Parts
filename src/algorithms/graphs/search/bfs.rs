@@ -124,7 +124,7 @@ where
 
 pub fn is_connected<I: Index, ED: EdgeData>(graph: &impl UndirectedGraph<I, ED>) -> bool {
     let mut num_discovered = I::zero();
-    bfs(graph, I::zero(), &mut |e| {
+    let _ = bfs(graph, I::zero(), &mut |e| {
         if let BfsEvent::Discovered(_) = e {
             num_discovered += I::one();
         }
@@ -199,10 +199,12 @@ mod test {
 
         let mut events = Vec::new();
 
-        bfs(&graph, 1, &mut |e| {
+        let cf = bfs(&graph, 1, &mut |e| {
             events.push(e);
             ControlFlow::<()>::Continue(())
         });
+
+        assert!(cf.is_continue());
 
         assert_eq!(
             events,

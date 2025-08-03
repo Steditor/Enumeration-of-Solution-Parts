@@ -32,9 +32,9 @@ impl<I: Index, ED: EdgeData> Display for DirectedAdjacencyArrayGraph<I, ED> {
             self.num_edges()
         )?;
         for v in self.vertices() {
-            write!(f, "\t{} →", v)?;
+            write!(f, "\t{v} →")?;
             for a in self.adjacencies(v, Direction::OUT) {
-                write!(f, " {:?},", a)?;
+                write!(f, " {a:?},")?;
             }
             writeln!(f)?;
         }
@@ -239,9 +239,9 @@ impl<I: Index, ED: EdgeData> Display for UndirectedAdjacencyArrayGraph<I, ED> {
             self.num_edges()
         )?;
         for v in self.vertices() {
-            write!(f, "\t{} →", v)?;
+            write!(f, "\t{v} →")?;
             for a in self.adjacencies(v, Direction::OUT) {
-                write!(f, " {:?},", a)?;
+                write!(f, " {a:?},")?;
             }
             writeln!(f)?;
         }

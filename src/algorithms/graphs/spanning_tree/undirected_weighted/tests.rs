@@ -1,3 +1,5 @@
+use boruvka::IncrementalBoruvka;
+use kruskal::IncrementalKruskal;
 use prim::IncrementalPrim;
 
 use super::*;
@@ -63,10 +65,10 @@ fn test_boruvka_crls() {
             (8, 2, 2),
             (3, 2, 7),
             (4, 3, 9),
-            (5, 6, 2),
-            (6, 7, 1),
-            (7, 0, 8),
-            (2, 5, 4),
+            (6, 5, 2),
+            (7, 6, 1),
+            (2, 1, 8),
+            (5, 2, 4),
         ],
     );
 }
@@ -98,7 +100,7 @@ fn test_prim_crls() {
 fn test_enumeration_crls() {
     let graph = UndirectedEdgeListGraph::new_with_edge_data(9, &CRLS_MST_EDGES);
 
-    let partials: Vec<_> = Incremental::<_, _, Boruvka>::enumerator_for(&graph).collect();
+    let partials: Vec<_> = EnumMST::<_, _, Prim>::enumerator_for(&graph).collect();
 
     assert_eq!(partials.iter().map(|e| e.data()).sum::<u8>(), 37);
     assert_same_elements(
@@ -117,7 +119,7 @@ fn test_enumeration_crls() {
 }
 
 #[test]
-fn test_prim_enumeration_crls() {
+fn test_incremental_prim_crls() {
     let graph = UndirectedEdgeListGraph::new_with_edge_data(9, &CRLS_MST_EDGES);
 
     let partials: Vec<_> = IncrementalPrim::enumerator_for(&graph).collect();
@@ -134,6 +136,50 @@ fn test_prim_enumeration_crls() {
             (8, 2, 2),
             (3, 2, 7),
             (4, 3, 9),
+        ],
+    );
+}
+
+#[test]
+fn test_incremental_kruskal_crls() {
+    let graph = UndirectedEdgeListGraph::new_with_edge_data(9, &CRLS_MST_EDGES);
+
+    let partials: Vec<_> = IncrementalKruskal::enumerator_for(&graph).collect();
+
+    assert_eq!(partials.iter().map(|e| e.data()).sum::<u8>(), 37);
+    assert_same_elements(
+        partials,
+        [
+            (0, 1, 4),
+            (2, 8, 2),
+            (5, 2, 4),
+            (2, 3, 7),
+            (3, 4, 9),
+            (6, 5, 2),
+            (7, 6, 1),
+            (0, 7, 8),
+        ],
+    );
+}
+
+#[test]
+fn test_incremental_boruvka_crls() {
+    let graph = UndirectedEdgeListGraph::new_with_edge_data(9, &CRLS_MST_EDGES);
+
+    let partials: Vec<_> = IncrementalBoruvka::enumerator_for(&graph).collect();
+
+    assert_eq!(partials.iter().map(|e| e.data()).sum::<u8>(), 37);
+    assert_same_elements(
+        partials,
+        [
+            (0, 1, 4),
+            (2, 8, 2),
+            (3, 2, 7),
+            (4, 3, 9),
+            (5, 6, 2),
+            (6, 7, 1),
+            (1, 2, 8),
+            (2, 5, 4),
         ],
     );
 }

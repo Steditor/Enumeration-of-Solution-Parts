@@ -10,6 +10,7 @@ pub trait DisjointSet<I: Index> {
         Self: Sized;
 
     fn elements(&self) -> I::IndexIterator;
+    fn num_elements(&self) -> I;
 
     fn find(&mut self, x: I) -> I;
     fn is_same(&mut self, x: I, y: I) -> bool {
@@ -35,6 +36,10 @@ impl<I: Index> DisjointSet<I> for UnionFind<I> {
 
     fn elements(&self) -> <I as Index>::IndexIterator {
         I::zero().range(self.0.num_vertices())
+    }
+
+    fn num_elements(&self) -> I {
+        self.0.num_vertices()
     }
 
     /// Find with path halfing.
@@ -144,6 +149,10 @@ impl<I: Index> DisjointSet<I> for RankedUnionFind<I> {
 
     fn elements(&self) -> <I as Index>::IndexIterator {
         self.forest.elements()
+    }
+
+    fn num_elements(&self) -> I {
+        self.forest.num_elements()
     }
 
     fn find(&mut self, x: I) -> I {

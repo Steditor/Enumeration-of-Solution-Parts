@@ -46,8 +46,8 @@ struct MeasurementFilePath {
 static REFERENCE_ALGORITHM_NAME: &str = "reference-quality";
 
 impl MeasurementFilePath {
-    fn try_new(path: &Path, algorithm_name: &str) -> Option<Self> {
-        let full_path = PathBuf::from(path);
+    fn try_new(path: impl AsRef<Path>, algorithm_name: &str) -> Option<Self> {
+        let full_path = PathBuf::from(path.as_ref());
 
         let mut editable_path = full_path.clone();
         editable_path
@@ -109,7 +109,7 @@ where
             // ignore directory entries that are errors
             .filter_map(Result::ok)
             // only look at files with proper file name including correct algorithm name
-            .filter_map(|f| MeasurementFilePath::try_new(&f.path(), algorithm.name())),
+            .filter_map(|f| MeasurementFilePath::try_new(f.path(), algorithm.name())),
     }
     .collect();
 
@@ -152,7 +152,7 @@ where
             // ignore directory entries that are errors
             .filter_map(Result::ok)
             // only look at files with proper file name including correct algorithm name
-            .filter_map(|f| MeasurementFilePath::try_new(&f.path(), algorithm.name())),
+            .filter_map(|f| MeasurementFilePath::try_new(f.path(), algorithm.name())),
     }
     .collect();
 

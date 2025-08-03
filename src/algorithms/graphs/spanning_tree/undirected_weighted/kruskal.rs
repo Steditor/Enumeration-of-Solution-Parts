@@ -1,13 +1,18 @@
+use std::marker::PhantomData;
+
 use compare::{Compare, Extract};
 
 use crate::{
-    algorithms::{graphs::search::dfs::dfs_forest, sorting::IQS},
+    algorithms::{
+        graphs::{search::dfs::dfs_forest, spanning_tree::undirected_weighted::MstPartial},
+        sorting::IQS,
+    },
     data_structures::{
         graphs::{Edge, EdgeData, Forest, Graph, UndirectedAdjacencyArrayGraph, UndirectedGraph},
         union_find::{DisjointSet, RankedUnionFind},
         Index,
     },
-    experiments::ExperimentAlgorithm,
+    experiments::{ExperimentAlgorithm, PreparedEnumerationAlgorithm},
 };
 
 use super::{AlgorithmType, MstAlgorithm};
@@ -17,10 +22,15 @@ pub const KRUSKAL_IQS: AlgorithmType =
         Ok(Kruskal::mst_for(graph))
     });
 
-pub const KRUSKAL_PDQ: AlgorithmType =
-    ExperimentAlgorithm::TotalTimeAlgorithm("total-kruskal-pdq", |graph| {
+pub const KRUSKAL_RUSTSORT: AlgorithmType =
+    ExperimentAlgorithm::TotalTimeAlgorithm("total-kruskal-rustsort", |graph| {
         Ok(Kruskal::rust_sort_mst_for(graph))
     });
+
+pub const INCREMENTAL_KRUSKAL: AlgorithmType = ExperimentAlgorithm::EnumerationAlgorithm(
+    "incremental-kruskal",
+    IncrementalKruskal::enumerator_for,
+);
 
 /// Kruskal's MST algorithm
 ///
@@ -94,5 +104,81 @@ impl Kruskal {
         let tree_graph =
             UndirectedAdjacencyArrayGraph::new_with_edge_data(graph.num_vertices(), &tree_edges);
         dfs_forest(&tree_graph)
+    }
+}
+
+pub struct IncrementalKruskal<I: Index, ED: EdgeData> {
+    _phantom: PhantomData<(I, ED)>,
+}
+
+impl<I: Index, ED: EdgeData> IncrementalKruskal<I, ED> {
+    pub fn enumerator_for(
+        graph: &impl UndirectedGraph<I, ED>,
+    ) -> PreparedEnumerationAlgorithm<MstPartial<I, ED>>
+    where
+        ED: Ord,
+    {
+        Self::comparator_enumerator_for(graph, Extract::new(|e: &(I, I, ED)| e.data()))
+    }
+
+    pub fn comparator_enumerator_for<C: Compare<(I, I, ED)> + Copy + 'static>(
+        graph: &impl UndirectedGraph<I, ED>,
+        comparator: C,
+    ) -> PreparedEnumerationAlgorithm<MstPartial<I, ED>> {
+        Box::new(MstEnumerator::with_comparator(graph, comparator))
+    }
+}
+
+struct MstEnumerator<I, ED, C>
+where
+    I: Index,
+    ED: EdgeData,
+    C: Compare<(I, I, ED)>,
+{
+    components: RankedUnionFind<I>,
+    sorted_edges: IQS<(I, I, ED), C>,
+    disjunct_sets: I,
+}
+
+impl<I, ED, C> MstEnumerator<I, ED, C>
+where
+    I: Index,
+    ED: EdgeData,
+    C: Compare<(I, I, ED)>,
+{
+    pub fn with_comparator(graph: &impl UndirectedGraph<I, ED>, comparator: C) -> Self {
+        let edges: Vec<_> = graph.edges().collect();
+        Self {
+            components: RankedUnionFind::new_with_size(graph.num_vertices()),
+            sorted_edges: IQS::with_comparator(&edges, comparator),
+            disjunct_sets: graph.num_vertices(),
+        }
+    }
+}
+
+impl<I, ED, C> Iterator for MstEnumerator<I, ED, C>
+where
+    I: Index,
+    ED: EdgeData,
+    C: Compare<(I, I, ED)>,
+{
+    type Item = MstPartial<I, ED>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.disjunct_sets == I::one() {
+            return None;
+        }
+        for e in self.sorted_edges.by_ref() {
+            let u = e.source();
+            let v = e.sink();
+            if !self.components.is_same(u, v) {
+                self.components.union(u, v);
+                self.disjunct_sets -= I::one();
+                return Some(e);
+            }
+        }
+        // Should never get here, but the compiler wants
+        // this path to return something as well
+        None
     }
 }

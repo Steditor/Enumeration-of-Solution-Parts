@@ -159,7 +159,7 @@ fn dfs_visit<I: Index, ED: EdgeData, B>(
 pub fn dfs_forest<I: Index, ED: EdgeData>(graph: &impl Graph<I, ED>) -> Forest<I, ED> {
     let mut forest = Forest::new_isolated_vertices(graph.num_vertices());
 
-    dfs(graph, &mut |e| {
+    let _ = dfs(graph, &mut |e| {
         if let DfsEvent::TreeEdge(u, v, d) = e {
             forest[v.index()] = Some((u, d));
         }
@@ -232,10 +232,12 @@ mod test {
 
         let mut events = Vec::new();
 
-        dfs(&graph, &mut |e| {
+        let cf = dfs(&graph, &mut |e| {
             events.push(e);
             ControlFlow::<()>::Continue(())
         });
+
+        assert!(cf.is_continue());
 
         assert_eq!(
             events,

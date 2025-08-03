@@ -22,7 +22,7 @@ fn run(options: &mut ExperimentOptions) {
     let job_numbers = (1..=8).flat_map(|m| (1..=9).map(move |x| x * 10_u32.pow(m)));
     let machine_numbers = (1..=9)
         .flat_map(|x| (0..=3).map(move |m| x * 10_u32.pow(m)))
-        .skip(1); // 1 machine ist boring
+        .skip(1); // 1 machine is boring
 
     let instances_per_size = 10;
     let runs_per_instance = 5;
@@ -30,18 +30,10 @@ fn run(options: &mut ExperimentOptions) {
 
     for jobs in job_numbers.filter(|&size| max_size.is_none_or(|max| size <= max)) {
         for machines in machine_numbers.clone().filter(|m| m < &jobs) {
-            log::info!(
-                "Run P||C_max approximation for {} jobs on {} machines.",
-                jobs,
-                machines
-            );
+            log::info!("Run P||C_max approximation for {jobs} jobs on {machines} machines.");
             for i in 1..=instances_per_size {
                 log::info!(
-                    "Solve instance {:2}/{:2} with {} jobs on {} machines.",
-                    i,
-                    instances_per_size,
-                    jobs,
-                    machines
+                    "Solve instance {i:2}/{instances_per_size:2} with {jobs} jobs on {machines} machines."
                 );
                 let mut generator = parallel_machines::Plain {
                     jobs,

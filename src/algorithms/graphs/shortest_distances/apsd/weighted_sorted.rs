@@ -165,10 +165,9 @@ mod enumerate {
 
             let (next_part, mut dijkstra) = dijkstra_queue.pop()?;
 
-            match dijkstra.next() {
-                // if there is a next part, re-insert the search with the next part as key
-                Some(peek_part) => dijkstra_queue.push((peek_part, dijkstra)),
-                None => (), // this search is done → discard it
+            // if there is a next part, re-insert the search with the next part as key
+            if let Some(peek_part) = dijkstra.next() {
+                dijkstra_queue.push((peek_part, dijkstra));
             }
 
             Some(next_part)

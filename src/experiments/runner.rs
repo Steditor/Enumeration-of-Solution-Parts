@@ -29,7 +29,7 @@ where
     let seed = options.seed_generator.next_u64();
     let mut instance_path = Generator::path();
     instance_path.push_str(&generator.file_name());
-    instance_path.push_str(&format!("_{}", seed));
+    instance_path.push_str(&format!("_{seed}"));
     let instance = generator.generate(seed);
 
     if options.collect_statistics {
@@ -110,7 +110,7 @@ where
     let seed = options.seed_generator.next_u64();
     let mut instance_path = Generator::path();
     instance_path.push_str(&generator.file_name());
-    instance_path.push_str(&format!("_{}", seed));
+    instance_path.push_str(&format!("_{seed}"));
     let instance = if options.cache_instances {
         generator.generate_with_cache(seed)?
     } else {
@@ -167,7 +167,7 @@ where
     Q: Quality,
 {
     let instance_path = instance_path.as_ref();
-    log::info!("Run experiments for {}.", instance_path);
+    log::info!("Run experiments for {instance_path}.");
 
     let mut algorithms: Vec<_> = algorithms.iter().collect();
     let mut rng = rand::thread_rng();
@@ -188,7 +188,7 @@ where
                             continue;
                         }
                     };
-                    let result_file_name = format!("{}.{}.csv", instance_path, name);
+                    let result_file_name = format!("{instance_path}.{name}.csv");
                     io::csv::append_to_file(
                         Path::new(&result_file_name),
                         slice::from_ref(&measurement),
@@ -199,7 +199,7 @@ where
                         instance,
                         enumeration_algorithm,
                     );
-                    let result_file_name = format!("{}.{}.csv", instance_path, name);
+                    let result_file_name = format!("{instance_path}.{name}.csv");
                     io::csv::append_to_file(
                         Path::new(&result_file_name),
                         slice::from_ref(&measurement),
@@ -208,10 +208,10 @@ where
             }
         }
 
-        log::info!("{:2}/{:2}", run, number_of_runs);
+        log::info!("{run:2}/{number_of_runs:2}");
     }
 
-    log::info!("Finished experiments for {}.", instance_path);
+    log::info!("Finished experiments for {instance_path}.");
 
     Ok(())
 }

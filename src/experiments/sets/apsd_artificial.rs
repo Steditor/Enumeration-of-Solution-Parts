@@ -148,19 +148,11 @@ fn run_apsd<D>(
             let edge_data_generator = Uniform::new(0, expected_edges.floor() as u32 / 4);
 
             log::info!(
-                "Run SSSD algorithm for {} jobs and parameter {} (edge probability {}).",
-                num_vertices,
-                parameter_label,
-                edge_probability,
+                "Run SSSD algorithm for {num_vertices} jobs and parameter {parameter_label} (edge probability {edge_probability})."
             );
             for i in 1..=instances_per_size {
                 log::info!(
-                    "Solve instance {:2}/{:2} with {} vertices and parameter {} (edge probability {}).",
-                    i,
-                    instances_per_size,
-                    num_vertices,
-                    parameter_label,
-                    edge_probability,
+                    "Solve instance {i:2}/{instances_per_size:2} with {num_vertices} vertices and parameter {parameter_label} (edge probability {edge_probability})."
                 );
                 let mut generator = Undirected::new(
                     num_vertices,

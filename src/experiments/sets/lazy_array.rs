@@ -42,10 +42,11 @@ const ALGORITHMS: [AlgorithmType; 4] = [
 fn run(options: &mut ExperimentOptions) {
     let mut array_sizes: Vec<_> = (1..=7)
         .flat_map(|m| (1..=9).map(move |x| x * 10_usize.pow(m)))
+        .flat_map(|size| std::iter::repeat_n(size, 100))
         .collect();
     array_sizes.shuffle(&mut rand::thread_rng());
 
-    let instances_per_size = 10;
+    let instances_per_size = 1;
     let runs_per_instance = 5;
     let max_size = options.max_size;
 

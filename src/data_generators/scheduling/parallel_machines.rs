@@ -10,8 +10,6 @@ use crate::{
 /// A scheduling instance for parallel machines without any precedences.
 ///
 /// This corresponds to problems of the type P|| in standardized scheduling notation.
-///
-/// Each processing time is chosen uniformly at random from the integer interval `1..=100`.
 pub struct Plain<'a> {
     pub machines: u32,
     pub jobs: u32,

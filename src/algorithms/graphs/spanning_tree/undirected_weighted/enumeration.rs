@@ -19,24 +19,24 @@ use super::{AlgorithmType, Boruvka, Kruskal, MstAlgorithm, MstPartial, Prim};
 /// Enumeration algorithm for MSTs using Borůvka's MST algorithm as total-time black box
 pub const ENUMERATE_WITH_BORUVKA: AlgorithmType = ExperimentAlgorithm::EnumerationAlgorithm(
     "enum-boruvka",
-    Incremental::<_, _, Boruvka>::enumerator_for,
+    EnumMST::<_, _, Boruvka>::enumerator_for,
 );
 
 pub const ENUMERATE_WITH_KRUSKAL: AlgorithmType = ExperimentAlgorithm::EnumerationAlgorithm(
     "enum-kruskal",
-    Incremental::<_, _, Kruskal>::enumerator_for,
+    EnumMST::<_, _, Kruskal>::enumerator_for,
 );
 
 pub const ENUMERATE_WITH_PRIM: AlgorithmType = ExperimentAlgorithm::EnumerationAlgorithm(
     "enum-prim",
-    Incremental::<_, _, Prim>::enumerator_for,
+    EnumMST::<_, _, Prim>::enumerator_for,
 );
 
-pub struct Incremental<I: Index, ED: EdgeData, BB: MstAlgorithm<I, ED>> {
+pub struct EnumMST<I: Index, ED: EdgeData, BB: MstAlgorithm<I, ED>> {
     _phantom: PhantomData<(I, ED, BB)>,
 }
 
-impl<I: Index, ED: EdgeData, BB> MstAlgorithm<I, ED> for Incremental<I, ED, BB>
+impl<I: Index, ED: EdgeData, BB> MstAlgorithm<I, ED> for EnumMST<I, ED, BB>
 where
     BB: MstAlgorithm<I, ED> + 'static,
 {
@@ -59,7 +59,7 @@ where
     }
 }
 
-impl<I: Index, ED: EdgeData, BB> Incremental<I, ED, BB>
+impl<I: Index, ED: EdgeData, BB> EnumMST<I, ED, BB>
 where
     BB: MstAlgorithm<I, ED> + 'static,
 {
@@ -183,7 +183,7 @@ where
     }
 }
 
-fn credit_accumulation_step<I: Index, ED: EdgeData, C, G>(
+pub fn credit_accumulation_step<I: Index, ED: EdgeData, C, G>(
     graph: &G,
     comparator: &C,
     iterator: &mut I::IndexIterator,
