@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
 use compare::{Compare, Extract};
+use itertools::{Itertools, MultiPeek};
 
 use crate::{
     algorithms::{
@@ -136,7 +137,7 @@ where
     C: Compare<(I, I, ED)>,
 {
     components: RankedUnionFind<I>,
-    sorted_edges: IQS<(I, I, ED), C>,
+    sorted_edges: MultiPeek<IQS<(I, I, ED), C>>,
     disjunct_sets: I,
 }
 
@@ -148,9 +149,14 @@ where
 {
     pub fn with_comparator(graph: &impl UndirectedGraph<I, ED>, comparator: C) -> Self {
         let edges: Vec<_> = graph.edges().collect();
+        let mut sorted_edges = IQS::with_comparator(&edges, comparator).multipeek();
+        // IQS does preprocessing in the first delay and needs the second delay to warm up.
+        // pre-compute these two in Kruskal's preprocessing.
+        sorted_edges.peek();
+        sorted_edges.peek();
         Self {
             components: RankedUnionFind::new_with_size(graph.num_vertices()),
-            sorted_edges: IQS::with_comparator(&edges, comparator),
+            sorted_edges,
             disjunct_sets: graph.num_vertices(),
         }
     }

@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand, ValueEnum};
 use exp_lib::experiments::sets::{
-    apsd, apsd_artificial, f2_cmax, lazy_array, mst, p_cmax, prec_cmax, rj_cmax, sssd,
+    apsd, apsd_artificial, f2_cmax, lazy_array, mst, p_cmax, prec_cmax, rj_cmax, sorting, sssd,
     sssd_artificial, AggregationOptions, ExperimentOptions, ExperimentSet,
 };
 use rand::SeedableRng;
@@ -84,6 +84,8 @@ enum Set {
     AllPairsShortestDistanceWeightedArtificial,
     #[clap(name = "LazyArray", alias = "lazy_array")]
     LazyArray,
+    #[clap(name = "Sorting", alias = "sort")]
+    Sorting,
 }
 
 fn main() {
@@ -116,6 +118,7 @@ fn main() {
             Box::new(apsd_artificial::weighted_experiment_set())
         }
         Set::LazyArray => Box::new(lazy_array::experiment_set()),
+        Set::Sorting => Box::new(sorting::experiment_set()),
     };
 
     match cli.command {

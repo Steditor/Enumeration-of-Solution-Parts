@@ -3,6 +3,7 @@ use rand::{prelude::Distribution, Rng};
 pub mod graphs;
 pub mod permutations;
 pub mod scheduling;
+pub mod sorting;
 
 /// An object-safe Distribution trait using a fixed Rng.
 pub trait FixedRngDistribution<T, R: Rng> {

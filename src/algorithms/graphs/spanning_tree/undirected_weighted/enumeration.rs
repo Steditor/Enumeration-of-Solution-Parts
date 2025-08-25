@@ -27,10 +27,8 @@ pub const ENUMERATE_WITH_KRUSKAL: AlgorithmType = ExperimentAlgorithm::Enumerati
     EnumMST::<_, _, Kruskal>::enumerator_for,
 );
 
-pub const ENUMERATE_WITH_PRIM: AlgorithmType = ExperimentAlgorithm::EnumerationAlgorithm(
-    "enum-prim",
-    EnumMST::<_, _, Prim>::enumerator_for,
-);
+pub const ENUMERATE_WITH_PRIM: AlgorithmType =
+    ExperimentAlgorithm::EnumerationAlgorithm("enum-prim", EnumMST::<_, _, Prim>::enumerator_for);
 
 pub struct EnumMST<I: Index, ED: EdgeData, BB: MstAlgorithm<I, ED>> {
     _phantom: PhantomData<(I, ED, BB)>,

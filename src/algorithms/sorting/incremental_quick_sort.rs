@@ -1,5 +1,23 @@
 use compare::{natural, Compare, Natural};
 
+use crate::{
+    algorithms::sorting::AlgorithmType,
+    data_generators::sorting::SortingInstance,
+    experiments::{ExperimentAlgorithm, PreparedEnumerationAlgorithm},
+};
+
+pub const ENUMERATE_WITH_IQS: AlgorithmType =
+    ExperimentAlgorithm::EnumerationAlgorithm("enum-iqs", prepare_enumeration_algorithm);
+
+fn prepare_enumeration_algorithm<T>(input: &SortingInstance<T>) -> PreparedEnumerationAlgorithm<T>
+where
+    T: Copy + Ord,
+{
+    let mut iqs_instance = IQS::new(input).peekable();
+    iqs_instance.peek();
+    Box::new(iqs_instance)
+}
+
 /// Incremental Quick Sort
 ///
 /// This is an implementation of the incremental sorting algorithm by Paredes and Navarro \[1\].
@@ -171,6 +189,11 @@ where
 
 #[cfg(test)]
 mod test {
+    use std::time::Instant;
+
+    use rand::{distributions::Uniform, prelude::Distribution, SeedableRng};
+    use rand_pcg::Pcg64;
+
     use super::*;
 
     const CRLS_7_1: [u32; 8] = [2, 8, 7, 1, 3, 5, 6, 4];
@@ -212,5 +235,29 @@ mod test {
             sorted,
             [12, 18, 25, 29, 33, 37, 41, 49, 51, 58, 63, 67, 74, 81, 86, 92]
         );
+    }
+
+    #[test]
+    fn test_delay() {
+        //simple_logger::init_with_level(log::Level::Info).unwrap();
+
+        let elements: Vec<_> = Uniform::new(0, u32::MAX)
+            .sample_iter(Pcg64::seed_from_u64(42))
+            .take(1000)
+            .collect();
+
+        let start = Instant::now();
+        let iqs = prepare_enumeration_algorithm(&elements);
+
+        let preprocessing_time = start.elapsed().as_nanos() as u64;
+        log::info!("{preprocessing_time}");
+
+        let mut delay_start = Instant::now();
+        for _ in iqs.take(50) {
+            let delay = delay_start.elapsed().as_nanos() as u64;
+            log::info!("{delay}");
+            assert!(delay < preprocessing_time);
+            delay_start = Instant::now();
+        }
     }
 }

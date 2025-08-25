@@ -6,6 +6,7 @@ pub mod mst;
 pub mod p_cmax;
 pub mod prec_cmax;
 pub mod rj_cmax;
+pub mod sorting;
 pub mod sssd;
 pub mod sssd_artificial;
 

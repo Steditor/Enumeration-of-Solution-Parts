@@ -2,6 +2,8 @@
 //!
 //! Optimize makespan by scheduling in order of non-decreasing release times.
 
+use itertools::Itertools;
+
 use crate::{
     algorithms::sorting::IQS,
     data_structures::scheduling_problems::{Job, SchedulingInstance, SingleMachine},
@@ -26,10 +28,13 @@ fn prepare_enumeration_algorithm(
     input: &InstanceType,
 ) -> PreparedEnumerationAlgorithm<SchedulePartial> {
     let sortable_jobs: Vec<&Job<u32, (), u32>> = input.jobs.iter().collect();
-    let iqs = IQS::with_comparator(
+    let mut iqs = IQS::with_comparator(
         &sortable_jobs,
         |j1: &&Job<u32, (), u32>, j2: &&Job<u32, (), u32>| j1.release_time.cmp(&j2.release_time),
-    );
+    )
+    .multipeek();
+    iqs.peek();
+    iqs.peek();
     Box::new(EnumerateWithIQS { iqs, time: 0 })
 }
 

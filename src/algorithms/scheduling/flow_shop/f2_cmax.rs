@@ -10,6 +10,8 @@
 
 use std::{cmp::Reverse, collections::VecDeque};
 
+use itertools::Itertools;
+
 use crate::{
     algorithms::sorting::IQS,
     data_structures::scheduling_problems::{FlowShop, Job, SchedulingInstance},
@@ -50,16 +52,21 @@ fn prepare_enumeration_algorithm(
         .iter()
         .filter(|j| j.operations[0] > j.operations[1])
         .collect();
-    let iqs = Box::new(
-        IQS::with_comparator(
-            &jobs_faster_or_equal_on_machine_1,
-            |j1: &&Job<i32>, j2: &&Job<i32>| j1.operations[0].cmp(&j2.operations[0]),
-        )
-        .chain(IQS::with_comparator(
-            &jobs_faster_on_machine_2,
-            |j1: &&Job<i32>, j2: &&Job<i32>| j1.operations[0].cmp(&j2.operations[0]).reverse(),
-        )),
-    );
+    let mut iqs_m1 = IQS::with_comparator(
+        &jobs_faster_or_equal_on_machine_1,
+        |j1: &&Job<i32>, j2: &&Job<i32>| j1.operations[0].cmp(&j2.operations[0]),
+    )
+    .multipeek();
+    iqs_m1.peek();
+    iqs_m1.peek();
+    let mut iqs_m2 = IQS::with_comparator(
+        &jobs_faster_on_machine_2,
+        |j1: &&Job<i32>, j2: &&Job<i32>| j1.operations[0].cmp(&j2.operations[0]).reverse(),
+    )
+    .multipeek();
+    iqs_m2.peek();
+    iqs_m2.peek();
+    let iqs = Box::new(iqs_m1.chain(iqs_m2));
     Box::new(EnumerateWithIQS {
         iqs,
         time_machine_1: 0,

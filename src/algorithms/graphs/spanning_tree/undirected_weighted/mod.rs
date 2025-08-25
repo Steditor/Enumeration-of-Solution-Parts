@@ -3,11 +3,13 @@ mod enumeration;
 mod kruskal;
 mod prim;
 
-pub use boruvka::{IncrementalBoruvka, Boruvka, INCREMENTAL_BORUVKA, BORUVKA};
+pub use boruvka::{Boruvka, IncrementalBoruvka, BORUVKA, INCREMENTAL_BORUVKA};
 pub use enumeration::{
     EnumMST, ENUMERATE_WITH_BORUVKA, ENUMERATE_WITH_KRUSKAL, ENUMERATE_WITH_PRIM,
 };
-pub use kruskal::{IncrementalKruskal, Kruskal, INCREMENTAL_KRUSKAL, KRUSKAL_IQS, KRUSKAL_RUSTSORT};
+pub use kruskal::{
+    IncrementalKruskal, Kruskal, INCREMENTAL_KRUSKAL, KRUSKAL_IQS, KRUSKAL_RUSTSORT,
+};
 pub use prim::{IncrementalPrim, Prim, INCREMENTAL_PRIM, PRIM};
 
 use compare::Compare;
